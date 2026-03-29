@@ -1,0 +1,36 @@
+# PyTorch & Machine Learning
+*.pth
+*.pt
+*.ckpt
+experiments/weights/
+runs/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Dataset / Data
+data/raw/
+*.csv
+*.txt
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
