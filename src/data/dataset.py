@@ -33,9 +33,36 @@ class CelebADataset(Dataset):
         label = self.labels[idx]
         return image, label
 
-def prepare_splits(data_dir="data/raw", num_enroll=80, seed=42):
+def load_custom_data(custom_root="data/custom"):
     """
-    Przygotowuje 6 ściśle izolowanych zbiorów zgodnie z założeniem laboratoryjnym:
+    Ładuje ścieżki do zdjęć osób z grupy (custom).
+    Zwraca dwa słowniki: {user_id: [paths]} dla enroll i test.
+    """
+    enroll_dir = os.path.join(custom_root, "enroll")
+    test_dir = os.path.join(custom_root, "test")
+    
+    custom_enroll = {}
+    custom_test = {}
+    
+    if os.path.exists(enroll_dir):
+        for person in os.listdir(enroll_dir):
+            p_dir = os.path.join(enroll_dir, person)
+            if os.path.isdir(p_dir):
+                paths = [os.path.join(p_dir, f) for f in os.listdir(p_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+                custom_enroll[person] = sorted(paths)
+                
+    if os.path.exists(test_dir):
+        for person in os.listdir(test_dir):
+            p_dir = os.path.join(test_dir, person)
+            if os.path.isdir(p_dir):
+                paths = [os.path.join(p_dir, f) for f in os.listdir(p_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+                custom_test[person] = sorted(paths)
+                
+    return custom_enroll, custom_test
+
+def prepare_splits(data_dir="data/raw", num_enroll=80, seed=42, custom_data=None):
+    """
+    Przygotowuje 6 ściśle izolowanych zbiorów:
     - Train (75% tożsamości)
     - Val (10% tożsamości) -> do dobierania progu i optymalizacji
     - Test (10% tożsamości)
@@ -67,42 +94,45 @@ def prepare_splits(data_dir="data/raw", num_enroll=80, seed=42):
     test_ids = all_identities[num_train+num_val:num_train+num_val+num_test]
     enroll_pool = all_identities[num_train+num_val+num_test:]
     
-    # Do wdrożenia używamy zadeklarowanej liczby (lub całej puli jeśli jest mniejsza)
-    # Zgodnie z 10% założeniem, mamy tu ponad 1000 osób. Wymóg projektu to >= 80 profilów.
-    # Wrzucamy tutaj całą 10% pule do Enrolled A i B.
     enrolled_ids = enroll_pool[:num_enroll] if num_enroll is not None else enroll_pool
     
-    # ------------------ ENROLLED A / B ------------------
     enrolled_A = {}
     enrolled_B = {}
     
+    # 1. Najpierw dodajemy dane customowe (priorytet)
+    if custom_data:
+        c_enroll, c_test = custom_data
+        for uid in sorted(c_enroll.keys()):
+            enrolled_A[uid] = c_enroll[uid]
+            # Bierzemy testowe z custom_test jeśli istnieją
+            if uid in c_test:
+                enrolled_B[uid] = c_test[uid]
+            else:
+                enrolled_B[uid] = []
+
+    # 2. Potem dodajemy resztę z CelebA
     for ident in enrolled_ids:
         imgs = data[ident]
-        # Przyjmujemy max 5 zdjęć na profil
         enroll_count = min(5, len(imgs) - 1)
         if enroll_count <= 0:
-            enroll_count = 1  # Fallback jeżeli ktoś ma np 1 zdjęcie (prawie rzadkość w CelebA)
+            enroll_count = 1  
             
         enrolled_A[ident] = imgs[:enroll_count]
         enrolled_B[ident] = imgs[enroll_count:]
         
-    # ------------------ TEST (UNKNOWNS) ------------------
     test_paths, test_labels = [], []
     for ident in test_ids:
         for img in data[ident]:
             test_paths.append(img)
             test_labels.append(ident)
             
-    # ------------------ VAL (DISJOINT THRESHOLD TUNE) -----
     val_paths, val_labels = [], []
     for ident in val_ids:
         for img in data[ident]:
             val_paths.append(img)
             val_labels.append(ident)
             
-    # ------------------ TRAIN ------------------
     train_paths, train_labels = [], []
-    # Train ID muszą być ciągłością 0..N ze względu na specyfikę funkcji wielomianowej marginu w CrossEntropy
     id_map = {ident: i for i, ident in enumerate(train_ids)}
     
     for ident in train_ids:

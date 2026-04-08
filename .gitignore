@@ -1,36 +1,53 @@
-# PyTorch & Machine Learning
-*.pth
-*.pt
-*.ckpt
-experiments/weights/
-runs/
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Python environments
+# Environments
 .env
 .venv
 env/
 venv/
 ENV/
-env.bak/
-venv.bak/
 
-# Dataset / Data
-data/raw/
-*.csv
-*.txt
+# Data and Logs
+data/
+*.db
+*.bin
+*.log
+runs/
+experiments/weights/
+experiments/Baseline*/
+experiments/db_*/
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Images (Broad ignore)
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.gif
+*.webp
 
-# IDEs and Editors
+# LaTeX
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.blg
+*.bbl
+# *.pdf (Keep if you want to push the final report)
+
+# IDE / OS
 .vscode/
 .idea/
-*.swp
-*.swo
-
-# OS specific
 .DS_Store
 Thumbs.db
+*.swp
+
+# EXCEPTIONS - Images and files needed for the report
+!wyniki/examples/
+!wyniki/wykresy/
+!raport.tex

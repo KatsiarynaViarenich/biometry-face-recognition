@@ -15,9 +15,14 @@ class FacePreprocessor:
         )
         self.device = device
         
-    def align_face(self, img_path):
+    def align_face(self, img_or_path):
         try:
-            img = Image.open(img_path).convert('RGB')
+            if isinstance(img_or_path, str):
+                img = Image.open(img_or_path).convert('RGB')
+            elif isinstance(img_or_path, Image.Image):
+                img = img_or_path.convert('RGB')
+            else:
+                return None
         except Exception as e:
             return None
             
